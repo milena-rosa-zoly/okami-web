@@ -22,6 +22,7 @@ export const Wrapper = styled.div`
   border: 2px dotted ${colors.lightGrey};
   border-radius: 4px;
   color: ${colors.darkPink};
+  cursor: pointer;
   display: flex;
   height: 56px;
   justify-content: center;
