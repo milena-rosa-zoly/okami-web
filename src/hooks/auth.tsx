@@ -4,12 +4,12 @@ import React, {
   useContext,
   useEffect,
   useState,
-} from "react";
-import Firebase from "../utils/firebase";
-
+} from 'react';
+import Firebase from '../utils/firebase';
+import api from '../services/api';
 interface AuthContextData {
-  currentUser: firebase.User | null;
-  signUpWithEmailAndPassword(credentials: UserCredentials): Promise<void>;
+  currentUser: firebase.User | undefined;
+  createUser(data: UserData): any;
   signInWithEmailAndPassword(credentials: UserCredentials): Promise<void>;
   signInWithGoogle(): Promise<void>;
   signOut(): Promise<void>;
@@ -17,60 +17,88 @@ interface AuthContextData {
   passwordUpdate(password: string): Promise<void>;
 }
 
+interface UserData {
+  email: string;
+  displayName: string;
+  password: string;
+  photoURL: string;
+}
 interface UserCredentials {
   email: string;
   password: string;
 }
 
+interface AuthenticationData {
+  user: firebase.User;
+  token: string;
+}
+
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
 const AuthProvider: React.FC = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<firebase.User | null>(() => {
-    const user = localStorage.getItem("@Okami:user");
-    if (user) {
-      return JSON.parse(user);
+  const [data, setData] = useState<AuthenticationData | null>(() => {
+    const user = localStorage.getItem('@Okami:user');
+    const token = localStorage.getItem('@Okami:token');
+
+    if (token && user) {
+      api.defaults.headers.authorization = `Bearer ${token}`;
+      return { token, user: JSON.parse(user) };
     }
 
     return null;
   });
 
   useEffect(() => {
-    Firebase.getAuth().onAuthStateChanged(async (firebaseUser) => {
+    Firebase.getAuth().onAuthStateChanged(async firebaseUser => {
       if (firebaseUser) {
-        localStorage.setItem("@Okami:user", JSON.stringify(firebaseUser));
-        setCurrentUser(firebaseUser);
+        const token = await firebaseUser.getIdToken();
+
+        localStorage.setItem('@Okami:user', JSON.stringify(firebaseUser));
+        localStorage.setItem('@Okami:token', token);
+        setData({ user: firebaseUser, token });
       }
     });
   }, []);
 
-  const signUpWithEmailAndPassword = useCallback(
-    async ({ email, password }: UserCredentials) => {
-      await Firebase.signUpWithEmailAndPassword({ email, password });
-    },
-    []
-  );
+  const createUser = useCallback(async (data: UserData) => {
+    const response = await api.post('users', {
+      name: data.displayName,
+      email: data.email,
+      password: data.password,
+      photoURL: data.photoURL,
+    });
+    return response.data as firebase.User;
+  }, []);
 
   const signInWithEmailAndPassword = useCallback(
     async ({ email, password }: UserCredentials) => {
       await Firebase.signInWithEmailAndPassword({ email, password });
     },
-    []
+    [],
   );
 
   const signInWithGoogle = useCallback(async () => {
     const { user } = await Firebase.signInWithGoogle();
+    const token = await Firebase.getAuth().currentUser?.getIdToken();
 
-    if (user) {
-      localStorage.setItem("@Okami:user", JSON.stringify(user));
-      setCurrentUser(user);
+    if (user && token) {
+      localStorage.setItem('@Okami:user', JSON.stringify(user));
+      localStorage.setItem('@Okami:token', token);
+      setData({
+        user,
+        token,
+      });
+
+      api.defaults.headers.authorization = `Bearer ${token}`;
     } else {
-      throw new Error("algo de errado não está certo no login");
+      throw new Error('algo de errado não está certo no login');
     }
   }, []);
 
   const signOut = useCallback(async () => {
-    localStorage.removeItem("@Okami:user");
-    setCurrentUser(null);
+    localStorage.removeItem('@Okami:user');
+    localStorage.removeItem('@Okami:token');
+    setData(null);
     await Firebase.signOut();
   }, []);
 
@@ -85,8 +113,8 @@ const AuthProvider: React.FC = ({ children }) => {
   return (
     <AuthContext.Provider
       value={{
-        currentUser,
-        signUpWithEmailAndPassword,
+        currentUser: data?.user,
+        createUser,
         signInWithEmailAndPassword,
         signInWithGoogle,
         signOut,

@@ -14,6 +14,7 @@ import { FiLock, FiLogIn, FiMail } from 'react-icons/fi';
 
 import logoImg from '../../assets/logo_horizontal_positiva.png';
 import { Wrapper, AnimationContainer, Background } from './styles';
+import api from '../../services/api';
 
 interface SignInFormData {
   email: string;
@@ -24,7 +25,10 @@ const SignIn: React.FC = () => {
   const formRef = useRef<FormHandles>(null);
   const history = useHistory();
 
-  const { signInWithEmailAndPassword, signInWithGoogle } = useAuth();
+  const {
+    signInWithEmailAndPassword,
+    signInWithGoogle,
+  } = useAuth();
 
   const handleEnterWithGoogle = useCallback(async () => {
     try {
@@ -36,6 +40,14 @@ const SignIn: React.FC = () => {
     async (data: SignInFormData) => {
       try {
         formRef.current?.setErrors({});
+
+        const response = await api.post('sessions', {
+          email: data.email,
+          password: data.password,
+        });
+
+        console.log(response.data);
+        console.log('token', response.data.token);
 
         await signInWithEmailAndPassword({
           email: data.email,

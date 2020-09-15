@@ -26,27 +26,27 @@ const SignUp: React.FC = () => {
   const history = useHistory();
   const { addToast } = useToast();
 
-  const { signUpWithEmailAndPassword } = useAuth();
+  const { createUser } = useAuth();
 
   const handleSubmit = useCallback(
     async (data: SignUpFormData) => {
       try {
         formRef.current?.setErrors({});
 
-        await signUpWithEmailAndPassword({
+        await createUser({
           email: data.email,
+          displayName: data.name,
           password: data.password,
-        }).catch((error: Error) => {
-          formRef.current?.setErrors(error);
+          photoURL: 'https://api.adorable.io/avatars/152/abott@adorable.png',
         });
 
-        // TODO hook para updateUser
-        // await updateUser(name)
+        formRef.current?.reset();
+        history.push('/');
       } catch (error) {
-        console.log(error);
+        formRef.current?.setErrors(error);
       }
     },
-    [signUpWithEmailAndPassword],
+    [createUser, history],
   );
 
   return (

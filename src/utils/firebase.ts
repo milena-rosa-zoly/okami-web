@@ -1,5 +1,5 @@
-import * as firebase from "firebase/app";
-import "firebase/auth";
+import * as firebase from 'firebase/app';
+import 'firebase/auth';
 
 const config = {
   apiKey: process.env.REACT_APP_API_KEY,
@@ -25,9 +25,9 @@ class Firebase {
     this.googleProvider = new firebase.auth.GoogleAuthProvider();
 
     this.googleProvider.addScope(
-      "https://www.googleapis.com/auth/cloud-platform"
+      'https://www.googleapis.com/auth/cloud-platform',
     );
-    this.googleProvider.addScope("profile");
+    this.googleProvider.addScope('profile');
   }
 
   // *** Auth API ***
@@ -39,6 +39,10 @@ class Firebase {
 
   signInWithGoogle = async () => {
     return await this.auth.signInWithPopup(this.googleProvider);
+  };
+
+  signInWithCustomToken = async (token: string) => {
+    this.auth.signInWithCustomToken(token).catch(error => console.error(error));
   };
 
   signOut = async () => {
