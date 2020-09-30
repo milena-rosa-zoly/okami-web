@@ -19,12 +19,10 @@ const AudioInput: React.FC<UploadProps> = ({ onUpload }) => {
 
   const onDropAccepted = useCallback(
     files => {
-      console.log(files);
       onUpload(files);
       setUploadedFile(files[0]);
-      console.log(uploadedFile);
     },
-    [onUpload, uploadedFile],
+    [onUpload],
   );
 
   const {
@@ -71,8 +69,6 @@ const AudioInput: React.FC<UploadProps> = ({ onUpload }) => {
       )}
     </Wrapper>
   );
-  // !TODO: barrinha de carregamento do arquivo. depois disponibiliza player.
-  // !TODO: também precisa arrumar o estilo do player
 };
 
 export default AudioInput;

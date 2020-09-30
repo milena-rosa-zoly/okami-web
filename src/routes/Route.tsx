@@ -1,10 +1,10 @@
-import React from "react";
+import React from 'react';
 import {
   RouteProps as ReactDOMRouteProps,
   Route as ReactDOMRoute,
   Redirect,
-} from "react-router-dom";
-import { useAuth } from "../hooks/auth";
+} from 'react-router-dom';
+// import { useAuth } from '../hooks/auth';
 
 interface RouteProps extends ReactDOMRouteProps {
   isPrivate?: boolean;
@@ -16,8 +16,9 @@ const Route: React.FC<RouteProps> = ({
   component: Component,
   ...rest
 }) => {
-  const { currentUser } = useAuth();
-  const isSigned = !!currentUser;
+  // const { currentUser } = useAuth();
+  // const isSigned = !!currentUser;
+  const isSigned = true;
 
   return (
     <ReactDOMRoute
@@ -28,7 +29,7 @@ const Route: React.FC<RouteProps> = ({
         ) : (
           <Redirect
             to={{
-              pathname: isPrivate ? "/" : "/dashboard",
+              pathname: isPrivate ? '/' : '/dashboard',
               state: { from: location },
             }}
           />

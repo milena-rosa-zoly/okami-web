@@ -1,11 +1,13 @@
 import React, { useCallback, useRef } from 'react';
-import { Link, useHistory } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
+import * as Yup from 'yup';
 import { FormHandles } from '@unform/core';
 import { Form } from '@unform/web';
 import Button from 'components/Button';
 import Input from 'components/Input';
 
+import getValidationErrors from 'utils/getValidationErrors';
 import { useToast } from 'hooks/toast';
 import { useAuth } from 'hooks/auth';
 
@@ -14,7 +16,6 @@ import { FiLock, FiLogIn, FiMail } from 'react-icons/fi';
 
 import logoImg from '../../assets/logo_horizontal_positiva.png';
 import { Wrapper, AnimationContainer, Background } from './styles';
-import api from '../../services/api';
 
 interface SignInFormData {
   email: string;
@@ -23,49 +24,57 @@ interface SignInFormData {
 
 const SignIn: React.FC = () => {
   const formRef = useRef<FormHandles>(null);
-  const history = useHistory();
 
-  const {
-    signInWithEmailAndPassword,
-    signInWithGoogle,
-  } = useAuth();
+  const { addToast } = useToast();
+  const { signInWithEmailAndPassword, signInWithGoogle } = useAuth();
 
   const handleEnterWithGoogle = useCallback(async () => {
     try {
       await signInWithGoogle();
-    } catch (error) {}
-  }, [signInWithGoogle]);
+    } catch (error) {
+      addToast({
+        type: 'error',
+        title: 'Erro na autenticação',
+        description:
+          'Ocorreu um erro ao realizar o login. Por favor, tente novamente.',
+      });
+    }
+  }, [signInWithGoogle, addToast]);
 
   const handleSubmit = useCallback(
     async (data: SignInFormData) => {
       try {
         formRef.current?.setErrors({});
 
-        const response = await api.post('sessions', {
-          email: data.email,
-          password: data.password,
+        const schema = Yup.object().shape({
+          email: Yup.string()
+            .required('E-mail obrigatório')
+            .email('Digite um e-mail válido'),
+          password: Yup.string().required('Senha obrigatória'),
         });
 
-        console.log(response.data);
-        console.log('token', response.data.token);
+        await schema.validate(data, { abortEarly: false });
 
         await signInWithEmailAndPassword({
           email: data.email,
           password: data.password,
-        }).catch((error: Error) => {
-          formRef.current?.setErrors(error);
         });
-        history.push('/dashboard');
       } catch (error) {
-        console.log(error);
+        if (error instanceof Yup.ValidationError) {
+          const errors = getValidationErrors(error);
+          formRef.current?.setErrors(errors);
+          return;
+        }
+        addToast({
+          type: 'error',
+          title: 'Erro na autenticação',
+          description:
+            'Ocorreu um erro ao realizar o login. Por favor, verifique as credenciais.',
+        });
       }
     },
-    [history, signInWithEmailAndPassword],
+    [signInWithEmailAndPassword, addToast],
   );
-
-  const handleSignInWithGoogle = useCallback(async () => {
-    await signInWithGoogle();
-  }, [signInWithGoogle]);
 
   return (
     <Wrapper>

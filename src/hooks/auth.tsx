@@ -72,26 +72,43 @@ const AuthProvider: React.FC = ({ children }) => {
 
   const signInWithEmailAndPassword = useCallback(
     async ({ email, password }: UserCredentials) => {
-      await Firebase.signInWithEmailAndPassword({ email, password });
+      const { user } = await Firebase.signInWithEmailAndPassword({
+        email,
+        password,
+      });
+      const token = await Firebase.getAuth().currentUser?.getIdToken();
+
+      if (user && token) {
+        localStorage.setItem('@Okami:user', JSON.stringify(user));
+        localStorage.setItem('@Okami:token', token);
+        setData({ user, token });
+
+        api.defaults.headers.authorization = `Bearer ${token}`;
+      } else {
+        throw new Error(
+          'algo de errado não está certo no login com email e senha',
+        );
+      }
     },
     [],
   );
 
   const signInWithGoogle = useCallback(async () => {
-    const { user } = await Firebase.signInWithGoogle();
-    const token = await Firebase.getAuth().currentUser?.getIdToken();
+    try {
+      const { user } = await Firebase.signInWithGoogle();
+      const token = await Firebase.getAuth().currentUser?.getIdToken();
 
-    if (user && token) {
-      localStorage.setItem('@Okami:user', JSON.stringify(user));
-      localStorage.setItem('@Okami:token', token);
-      setData({
-        user,
-        token,
-      });
+      if (user && token) {
+        localStorage.setItem('@Okami:user', JSON.stringify(user));
+        localStorage.setItem('@Okami:token', token);
+        setData({ user, token });
 
-      api.defaults.headers.authorization = `Bearer ${token}`;
-    } else {
-      throw new Error('algo de errado não está certo no login');
+        api.defaults.headers.authorization = `Bearer ${token}`;
+      } else {
+        throw new Error('algo de errado não está certo no login do google');
+      }
+    } catch (error) {
+      console.log(error);
     }
   }, []);
 

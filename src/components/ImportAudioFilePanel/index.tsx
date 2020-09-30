@@ -13,6 +13,8 @@ import { FiUsers, FiAlertTriangle } from 'react-icons/fi';
 import * as Yup from 'yup';
 
 import { ImportFileContainer, FieldsContainer, Footer } from './styles';
+import api from 'services/api';
+import filesize from 'filesize';
 
 interface DropFileProps {
   file: File;
@@ -28,48 +30,79 @@ interface FormData {
 
 const ImportAudioFilePanel: React.FC = () => {
   const formRef = useRef<FormHandles>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<DropFileProps[]>([]);
+  const [uploadedFile, setUploadedFile] = useState<DropFileProps | undefined>(
+    undefined,
+  );
   const [processing, setProcessing] = useState(false);
 
-  const handleSubmit = useCallback(async (data: FormData) => {
-    try {
-      formRef.current?.setErrors({});
+  const handleSubmitFile = useCallback(
+    async (data: FormData) => {
+      try {
+        formRef.current?.setErrors({});
 
-      const schema = Yup.object().shape({
-        languageCode: Yup.string()
-          .length(5)
-          .matches(
-            RegExp('/[a-zA-Z]{2}-[a-zA-Z]{2}/g'),
-            'Deve seguir o formato xx-XX. Ex: pt-BR',
-          )
-          .default('pt-BR'),
-        numberOfSpeakers: Yup.string().default('1').notRequired(),
-      });
-
-      await schema.validate(data, {
-        abortEarly: false,
-      });
-
-      // !TODO: enviar arquivo pro storage.
-      console.log(data);
-    } catch (err) {
-      const validationErrors = {};
-
-      if (err instanceof Yup.ValidationError) {
-        err.inner.forEach(error => {
-          validationErrors[error.path] = error.message;
+        const schema = Yup.object().shape({
+          languageCode: Yup.string().notRequired(),
+          numberOfSpeakers: Yup.string().default('1').notRequired(),
         });
 
-        formRef.current?.setErrors(validationErrors);
+        await schema.validate(data, {
+          abortEarly: false,
+        });
+
+        const formData = new FormData();
+
+        if (uploadedFile) {
+          formData.append('file', uploadedFile.file, uploadedFile.filename);
+          formData.append('languageCode', data.languageCode || 'pt-BR');
+          formData.append(
+            'numberOfSpeakers',
+            String(data.numberOfSpeakers) || '1',
+          );
+
+          const importAudioResponse = await api.post('files/import', formData);
+          if (importAudioResponse.status === 200) {
+            const { id } = importAudioResponse.data;
+
+            const response = await api.get(`transcriptions/${id}`);
+            console.log(response.data);
+          }
+        } else {
+          throw new Error('Por favor, adicione um arquivo');
+        }
+      } catch (err) {
+        const validationErrors = {};
+
+        if (err instanceof Yup.ValidationError) {
+          err.inner.forEach(error => {
+            validationErrors[error.path] = error.message;
+          });
+
+          formRef.current?.setErrors(validationErrors);
+        }
       }
-    }
-  }, []);
+    },
+    [uploadedFile],
+  );
+
+  const handleUploadFile = useCallback(
+    (files: File[]) => {
+      const file = files[0];
+
+      setUploadedFile({
+        file,
+        filename: file.name,
+        fileUrl: URL.createObjectURL(file),
+        readableSize: filesize(file.size),
+      });
+    },
+    [uploadedFile],
+  );
 
   return (
     <ImportFileContainer>
       <Form
         ref={formRef}
-        onSubmit={handleSubmit}
+        onSubmit={handleSubmitFile}
         // initialData={{ languageCode: 'pt-BR', numberOfSpeakers: 2 }}
         noValidate
       >
@@ -95,7 +128,7 @@ const ImportAudioFilePanel: React.FC = () => {
           </div>
         </FieldsContainer>
 
-        <AudioInput onUpload={(files: File[]) => console.log(files)} />
+        <AudioInput onUpload={handleUploadFile} />
 
         <Footer>
           <p>

@@ -1,34 +1,33 @@
-import React, { useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from 'hooks/auth';
+import React from 'react';
+// import { useAuth } from 'hooks/auth';
 
-import { FiLogOut } from 'react-icons/fi';
-import { Wrapper, Content, Profile, SignOutButton } from './styles';
+// import { FiLogOut } from 'react-icons/fi';
+import { Wrapper, Content } from './styles';
 import logoImg from 'assets/logo_horizontal_positiva.png';
 
-interface UserFields {
-  displayName: string;
-  email: string;
-  photoURL: string;
-}
+// interface UserFields {
+//   displayName: string;
+//   email: string;
+//   photoURL: string;
+// }
 
 const Header: React.FC = () => {
-  const { signOut, currentUser } = useAuth();
+  // const { signOut, currentUser } = useAuth();
 
-  const handleSignOut = useCallback(async () => {
-    await signOut();
-  }, [signOut]);
+  // const handleSignOut = useCallback(async () => {
+  //   await signOut();
+  // }, [signOut]);
 
   return (
     <Wrapper>
       <Content>
         <img src={logoImg} alt="Logo Zoly" />
-        <aside>
-          {/* <Notifications /> */}
-          <Profile>
+        {/* <aside> */}
+        {/* <Notifications /> */}
+        {/* <Profile>
             <div>
               {/* !TODO static */}
-              <strong>{currentUser?.displayName}</strong>
+        {/* <strong>{currentUser?.displayName}</strong>
               <p>{currentUser?.email}</p>
             </div>
             {currentUser?.photoURL ? (
@@ -42,12 +41,12 @@ const Header: React.FC = () => {
                 alt="Generic Avatar"
               />
             )}
-          </Profile>
+          </Profile> */}
 
-          <SignOutButton onClick={handleSignOut}>
+        {/* <SignOutButton onClick={handleSignOut}>
             <FiLogOut size={24} />
-          </SignOutButton>
-        </aside>
+          </SignOutButton> */}
+        {/* </aside> */}
       </Content>
     </Wrapper>
   );

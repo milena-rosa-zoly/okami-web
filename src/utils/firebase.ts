@@ -1,5 +1,6 @@
 import * as firebase from 'firebase/app';
 import 'firebase/auth';
+import 'firebase/storage';
 
 const config = {
   apiKey: process.env.REACT_APP_API_KEY,
@@ -18,6 +19,7 @@ interface UserCredentials {
 class Firebase {
   private auth: firebase.auth.Auth;
   private googleProvider: firebase.auth.GoogleAuthProvider;
+  private storage: firebase.storage.Storage;
 
   constructor() {
     firebase.initializeApp(config);
@@ -28,6 +30,8 @@ class Firebase {
       'https://www.googleapis.com/auth/cloud-platform',
     );
     this.googleProvider.addScope('profile');
+
+    this.storage = firebase.storage();
   }
 
   // *** Auth API ***
@@ -53,8 +57,12 @@ class Firebase {
   passwordUpdate = (password: string) =>
     this.auth.currentUser?.updatePassword(password);
 
-  getAuth = () => {
-    return this.auth;
+  getAuth = () => this.auth;
+
+  downloadFile = async (url: string): Promise<string> => {
+    const downloadUrl = await this.storage.refFromURL(url).getDownloadURL();
+
+    return downloadUrl;
   };
 }
 
